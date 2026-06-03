@@ -1378,7 +1378,12 @@ function sfc_render_upcoming_events( $args = array() ) {
 							<span class="sfc-upcoming__date" aria-hidden="true">
 								<span class="sfc-upcoming__day"><?php echo esc_html( $event['dayLabel'] ); ?></span>
 								<span class="sfc-upcoming__month"><?php echo esc_html( $event['monthLabel'] ); ?></span>
-								<span class="sfc-upcoming__short-date"><?php echo esc_html( $event['shortDateLabel'] ); ?></span>
+								<span class="sfc-upcoming__short-date">
+									<span class="sfc-upcoming__short-date-start"><?php echo esc_html( $event['startShortDateLabel'] ); ?></span>
+									<?php if ( ! empty( $event['multiDay'] ) ) : ?>
+										<span class="sfc-upcoming__short-date-end"><?php echo esc_html( $event['endShortDateLabel'] ); ?></span>
+									<?php endif; ?>
+								</span>
 							</span>
 							<span class="sfc-upcoming__body">
 								<span class="sfc-upcoming__headline">
@@ -1833,6 +1838,8 @@ function sfc_normalize_event( $post, $occurrence_start = '', $occurrence_end = '
 		'recurring' => 'none' !== sfc_sanitize_recurrence( get_post_meta( $post->ID, '_sfc_recurrence', true ) ),
 		'multiDay'  => ! empty( $end_date ) && $end_date !== $start_date,
 		'dateLabel' => sfc_format_event_datetime_value( $start_date, $start_time, $end_date, $end_time, $all_day ),
+		'startShortDateLabel' => sfc_format_event_short_single_date_value( $start_date ),
+		'endShortDateLabel' => sfc_format_event_short_single_date_value( $end_date ),
 		'shortDateLabel' => sfc_format_event_short_date_value( $start_date, $end_date ),
 		'timeLabel' => sfc_format_event_time_value( $start_date, $start_time, $end_date, $end_time, $all_day ),
 		'compactTimeLabel' => sfc_format_event_compact_time_value( $start_date, $start_time, $end_date, $end_time, $all_day ),
@@ -1975,13 +1982,27 @@ function sfc_format_event_short_date_value( $start_date, $end_date = '' ) {
 		return '';
 	}
 
-	$label = wp_date( 'd.m.Y', strtotime( $start_date ) );
+	$label = sfc_format_event_short_single_date_value( $start_date );
 
 	if ( ! empty( $end_date ) && $end_date !== $start_date ) {
-		$label .= ' - ' . wp_date( 'd.m.Y', strtotime( $end_date ) );
+		$label .= ' - ' . sfc_format_event_short_single_date_value( $end_date );
 	}
 
 	return $label;
+}
+
+/**
+ * Formats a single date as a compact numeric label.
+ *
+ * @param string $date Date value.
+ * @return string
+ */
+function sfc_format_event_short_single_date_value( $date ) {
+	if ( empty( $date ) ) {
+		return '';
+	}
+
+	return wp_date( 'd.m.Y', strtotime( $date ) );
 }
 
 /**

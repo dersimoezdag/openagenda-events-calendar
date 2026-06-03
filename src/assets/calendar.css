@@ -549,6 +549,11 @@
   font-weight: 400;
 }
 
+.sfc-upcoming--minimal-list .sfc-upcoming__item--multi-day .sfc-upcoming__short-date {
+  display: grid;
+  gap: 2px;
+}
+
 .sfc-upcoming--minimal-list .sfc-upcoming__body {
   display: grid;
   gap: 3px;
