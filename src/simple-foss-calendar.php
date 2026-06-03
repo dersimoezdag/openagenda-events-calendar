@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple FOSS Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.22
+ * Version: 0.1.23
  * Author: Simple FOSS Calendar Contributors
  * License: GPL-2.0-or-later
  * Text Domain: simple-foss-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SFC_VERSION', '0.1.22' );
+define( 'SFC_VERSION', '0.1.23' );
 define( 'SFC_PLUGIN_FILE', __FILE__ );
 define( 'SFC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SFC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -1156,32 +1156,15 @@ function sfc_add_single_event_details_to_content( $content ) {
 
 	$rendering = true;
 	$details = sfc_render_single_event_details( get_the_ID() );
-	$more    = sfc_render_single_more_events( get_the_ID() );
 	$rendering = false;
 
-	if ( empty( $details ) && empty( $more ) ) {
+	if ( empty( $details ) ) {
 		return $content;
 	}
 
-	return $details . $content . $more;
+	return $details . $content;
 }
 add_filter( 'the_content', 'sfc_add_single_event_details_to_content', 8 );
-
-/**
- * Hides the generic previous/next post navigation on single event pages.
- *
- * @param string $link Rendered adjacent post link.
- * @return string
- */
-function sfc_hide_single_event_adjacent_post_link( $link ) {
-	if ( is_singular( 'sfc_event' ) ) {
-		return '';
-	}
-
-	return $link;
-}
-add_filter( 'previous_post_link', 'sfc_hide_single_event_adjacent_post_link' );
-add_filter( 'next_post_link', 'sfc_hide_single_event_adjacent_post_link' );
 
 /**
  * Renders the detail panel for a single event page.
@@ -1243,65 +1226,6 @@ function sfc_render_single_event_details( $post_id ) {
 			<?php endif; ?>
 		</dl>
 	</div>
-	<?php
-	return ob_get_clean();
-}
-
-/**
- * Renders a curated upcoming-events section for single event pages.
- *
- * @param int $post_id Current event post ID.
- * @return string
- */
-function sfc_render_single_more_events( $post_id ) {
-	$events = sfc_get_events(
-		array(
-			'from'  => current_time( 'Y-m-d' ),
-			'limit' => 12,
-		)
-	);
-
-	$events = array_values(
-		array_filter(
-			$events,
-			function ( $event ) use ( $post_id ) {
-				return absint( $event['postId'] ) !== absint( $post_id );
-			}
-		)
-	);
-
-	$events = array_slice( $events, 0, 3 );
-
-	if ( empty( $events ) ) {
-		return '';
-	}
-
-	ob_start();
-	?>
-	<section class="sfc-single-more-events" aria-labelledby="sfc-single-more-events-title">
-		<h2 id="sfc-single-more-events-title" class="sfc-single-more-events__title"><?php esc_html_e( 'More Events', 'simple-foss-calendar' ); ?></h2>
-		<ul class="sfc-single-more-events__list">
-			<?php foreach ( $events as $event ) : ?>
-				<?php
-				$meta = array_filter(
-					array(
-						$event['compactTimeLabel'],
-						$event['location'],
-					)
-				);
-				?>
-				<li class="sfc-single-more-events__item">
-					<time class="sfc-single-more-events__date" datetime="<?php echo esc_attr( substr( $event['start'], 0, 10 ) ); ?>"><?php echo esc_html( $event['shortDateLabel'] ); ?></time>
-					<span class="sfc-single-more-events__body">
-						<a class="sfc-single-more-events__link" href="<?php echo esc_url( $event['url'] ); ?>"><?php echo esc_html( $event['title'] ); ?></a>
-						<?php if ( ! empty( $meta ) ) : ?>
-							<span class="sfc-single-more-events__meta"><?php echo esc_html( implode( ', ', $meta ) ); ?></span>
-						<?php endif; ?>
-					</span>
-				</li>
-			<?php endforeach; ?>
-		</ul>
-	</section>
 	<?php
 	return ob_get_clean();
 }

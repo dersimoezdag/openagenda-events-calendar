@@ -85,7 +85,16 @@ function writeMo(entries, outputPath) {
   fs.writeFileSync(outputPath, output);
 }
 
-const languagesDir = path.join(__dirname, '..', 'simple-foss-calendar', 'languages');
+const candidates = [
+  path.join(__dirname, '..', 'src', 'languages'),
+  path.join(__dirname, '..', 'simple-foss-calendar', 'languages'),
+];
+const languagesDir = candidates.find((candidate) => fs.existsSync(candidate));
+
+if (!languagesDir) {
+  throw new Error('Could not find a plugin languages directory.');
+}
+
 fs.readdirSync(languagesDir)
   .filter((file) => file.endsWith('.po'))
   .forEach((file) => {
