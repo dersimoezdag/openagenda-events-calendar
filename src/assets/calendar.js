@@ -147,15 +147,19 @@
   }
 
   function eventTimeLabel(event) {
-    if (event.allDay || !event.start || !event.start.includes('T')) {
+    if (event.allDay) {
       return '';
     }
 
-    const date = new Date(event.start);
-    return new Intl.DateTimeFormat(locale, {
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+    if (event.compactTimeLabel) {
+      return event.compactTimeLabel;
+    }
+
+    if (!event.start || !event.start.includes('T')) {
+      return '';
+    }
+
+    return event.start.split('T')[1].slice(0, 5);
   }
 
   function renderEvents(day, events) {

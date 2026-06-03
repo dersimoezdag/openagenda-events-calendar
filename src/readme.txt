@@ -4,7 +4,7 @@ Tags: calendar, events, event calendar, shortcode
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.1.19
+Stable tag: 0.1.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,8 @@ Adds an accessible event calendar and upcoming-events list to WordPress.
 == Description ==
 
 Simple FOSS Calendar provides an Events post type, event topics, date/time metadata, a responsive month calendar, an upcoming-events list, and a small read-only REST endpoint for frontend integrations.
+
+Repository: https://github.com/dersimoezdag/simple-foss-calendar
 
 The plugin is intentionally dependency-free on the frontend. It uses vanilla JavaScript and CSS, so it can be dropped into a broad range of WordPress themes.
 
@@ -79,6 +81,14 @@ No. The plugin is an original implementation that takes broad product inspiratio
 No. Events are stored as WordPress content and rendered with local plugin assets.
 
 == Changelog ==
+
+= 0.1.21 =
+
+Fix timezone-shifted event time display by formatting stored local event times directly.
+
+= 0.1.20 =
+
+Replace generic single-event post navigation with a styled "More Events" section.
 
 = 0.1.19 =
 

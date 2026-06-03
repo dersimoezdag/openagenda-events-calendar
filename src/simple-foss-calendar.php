@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple FOSS Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.20
+ * Version: 0.1.21
  * Author: Simple FOSS Calendar Contributors
  * License: GPL-2.0-or-later
  * Text Domain: simple-foss-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SFC_VERSION', '0.1.20' );
+define( 'SFC_VERSION', '0.1.21' );
 define( 'SFC_PLUGIN_FILE', __FILE__ );
 define( 'SFC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SFC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -1930,7 +1930,6 @@ function sfc_format_event_datetime_value( $start_date, $start_time, $end_date, $
 	}
 
 	$date_format = get_option( 'date_format' );
-	$time_format = get_option( 'time_format' );
 	$start_label = wp_date( $date_format, strtotime( $start_date ) );
 
 	if ( ! empty( $end_date ) && $end_date !== $start_date ) {
@@ -1938,11 +1937,10 @@ function sfc_format_event_datetime_value( $start_date, $start_time, $end_date, $
 	}
 
 	if ( ! $all_day && ! empty( $start_time ) ) {
-		$start_label .= ', ' . wp_date( $time_format, strtotime( $start_date . ' ' . $start_time ) );
+		$start_label .= ', ' . sfc_format_local_time_value( $start_time );
 
 		if ( ! empty( $end_time ) ) {
-			$end_context  = ! empty( $end_date ) ? $end_date : $start_date;
-			$start_label .= ' - ' . wp_date( $time_format, strtotime( $end_context . ' ' . $end_time ) );
+			$start_label .= ' - ' . sfc_format_local_time_value( $end_time );
 		}
 	}
 
@@ -2028,15 +2026,29 @@ function sfc_format_event_time_value( $start_date, $start_time, $end_date, $end_
 		return '';
 	}
 
-	$time_format = get_option( 'time_format' );
-	$label       = wp_date( $time_format, strtotime( $start_date . ' ' . $start_time ) );
+	$label = sfc_format_local_time_value( $start_time );
 
 	if ( ! empty( $end_time ) ) {
-		$end_context = ! empty( $end_date ) ? $end_date : $start_date;
-		$label      .= ' - ' . wp_date( $time_format, strtotime( $end_context . ' ' . $end_time ) );
+		$label .= ' - ' . sfc_format_local_time_value( $end_time );
 	}
 
 	return $label;
+}
+
+/**
+ * Formats a stored local HH:MM time without applying timezone conversion.
+ *
+ * @param string $time Stored time value.
+ * @return string
+ */
+function sfc_format_local_time_value( $time ) {
+	$time = sfc_sanitize_time( $time );
+
+	if ( empty( $time ) ) {
+		return '';
+	}
+
+	return substr( $time, 0, 5 );
 }
 
 /**
@@ -2054,11 +2066,10 @@ function sfc_format_event_compact_time_value( $start_date, $start_time, $end_dat
 		return '';
 	}
 
-	$start_label = wp_date( 'H:i', strtotime( $start_date . ' ' . $start_time ) );
+	$start_label = sfc_format_local_time_value( $start_time );
 
 	if ( ! empty( $end_time ) ) {
-		$end_context = ! empty( $end_date ) ? $end_date : $start_date;
-		$end_label   = wp_date( 'H:i', strtotime( $end_context . ' ' . $end_time ) );
+		$end_label = sfc_format_local_time_value( $end_time );
 
 		return sprintf(
 			/* translators: 1: event start time, 2: event end time. */
