@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple FOSS Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.26
+ * Version: 0.1.27
  * Author: Simple FOSS Calendar Contributors
  * License: GPL-2.0-or-later
  * Text Domain: simple-foss-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SFC_VERSION', '0.1.26' );
+define( 'SFC_VERSION', '0.1.27' );
 define( 'SFC_PLUGIN_FILE', __FILE__ );
 define( 'SFC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SFC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -570,13 +570,17 @@ function sfc_admin_event_ordering( $query ) {
 	$time_filter = sfc_get_admin_event_time_filter();
 
 	if ( 'archive' === $time_filter ) {
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Event date filtering relies on registered post meta.
 		$query->set( 'meta_query', sfc_get_admin_event_archive_meta_query() );
 	} else {
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Event date filtering relies on registered post meta.
 		$query->set( 'meta_query', sfc_get_admin_event_active_meta_query() );
 	}
 
 	if ( 'sfc_start' === $query->get( 'orderby' ) || ! $query->get( 'orderby' ) ) {
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Admin event sorting uses the registered start-date meta field.
 		$query->set( 'meta_key', '_sfc_start_date' );
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Admin event sorting uses the registered start-date meta field.
 		$query->set( 'orderby', 'meta_value' );
 		$query->set( 'order', 'archive' === $time_filter ? 'DESC' : 'ASC' );
 	}
@@ -644,6 +648,7 @@ function sfc_count_admin_events_by_time_filter( $time_filter ) {
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
 			'no_found_rows'  => false,
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Admin event counts use the same date filters as the event list.
 			'meta_query'     => 'archive' === $time_filter ? sfc_get_admin_event_archive_meta_query() : sfc_get_admin_event_active_meta_query(),
 		)
 	);
@@ -1990,15 +1995,19 @@ function sfc_get_events( $args = array() ) {
 		'post_type'      => 'sfc_event',
 		'post_status'    => 'publish',
 		'posts_per_page' => -1,
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Public event lists are ordered by the registered start-date meta field.
 		'meta_key'       => '_sfc_start_date',
 		'orderby'        => array(
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Public event lists are ordered by the registered start-date meta field.
 			'meta_value' => 'ASC',
 			'date'       => 'ASC',
 		),
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Public event lists filter by the registered start-date meta field.
 		'meta_query'     => $meta_query,
 	);
 
 	if ( ! empty( $args['topic'] ) ) {
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Topic filtering is an intentional public event-list feature.
 		$query_args['tax_query'] = array(
 			array(
 				'taxonomy' => 'sfc_event_topic',
