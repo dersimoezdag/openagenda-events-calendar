@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Simple FOSS Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.27
+ * Version: 0.1.28
  * Author: Simple FOSS Calendar Contributors
  * License: GPL-2.0-or-later
  * Text Domain: simple-foss-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'SFC_VERSION', '0.1.27' );
+define( 'SFC_VERSION', '0.1.28' );
 define( 'SFC_PLUGIN_FILE', __FILE__ );
 define( 'SFC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SFC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -325,26 +325,24 @@ function sfc_save_event_meta( $post_id ) {
 	}
 
 	$fields = array(
-		'_sfc_start_date'   => array( 'request' => 'sfc_start_date', 'sanitize' => 'sfc_sanitize_date' ),
-		'_sfc_start_time'   => array( 'request' => 'sfc_start_time', 'sanitize' => 'sfc_sanitize_time' ),
-		'_sfc_end_date'     => array( 'request' => 'sfc_end_date', 'sanitize' => 'sfc_sanitize_date' ),
-		'_sfc_end_time'     => array( 'request' => 'sfc_end_time', 'sanitize' => 'sfc_sanitize_time' ),
-		'_sfc_location'     => array( 'request' => 'sfc_location', 'sanitize' => 'sanitize_text_field' ),
-		'_sfc_external_url' => array( 'request' => 'sfc_external_url', 'sanitize' => 'esc_url_raw' ),
-		'_sfc_color'        => array( 'request' => 'sfc_color', 'sanitize' => 'sanitize_hex_color' ),
-		'_sfc_recurrence'   => array( 'request' => 'sfc_recurrence', 'sanitize' => 'sfc_sanitize_recurrence' ),
-		'_sfc_recurrence_until' => array( 'request' => 'sfc_recurrence_until', 'sanitize' => 'sfc_sanitize_date' ),
+		'_sfc_start_date'       => isset( $_POST['sfc_start_date'] ) ? sfc_sanitize_date( sanitize_text_field( wp_unslash( $_POST['sfc_start_date'] ) ) ) : '',
+		'_sfc_start_time'       => isset( $_POST['sfc_start_time'] ) ? sfc_sanitize_time( sanitize_text_field( wp_unslash( $_POST['sfc_start_time'] ) ) ) : '',
+		'_sfc_end_date'         => isset( $_POST['sfc_end_date'] ) ? sfc_sanitize_date( sanitize_text_field( wp_unslash( $_POST['sfc_end_date'] ) ) ) : '',
+		'_sfc_end_time'         => isset( $_POST['sfc_end_time'] ) ? sfc_sanitize_time( sanitize_text_field( wp_unslash( $_POST['sfc_end_time'] ) ) ) : '',
+		'_sfc_location'         => isset( $_POST['sfc_location'] ) ? sanitize_text_field( wp_unslash( $_POST['sfc_location'] ) ) : '',
+		'_sfc_external_url'     => isset( $_POST['sfc_external_url'] ) ? esc_url_raw( wp_unslash( $_POST['sfc_external_url'] ) ) : '',
+		'_sfc_color'            => isset( $_POST['sfc_color'] ) ? sanitize_hex_color( sanitize_text_field( wp_unslash( $_POST['sfc_color'] ) ) ) : '',
+		'_sfc_recurrence'       => isset( $_POST['sfc_recurrence'] ) ? sfc_sanitize_recurrence( sanitize_key( wp_unslash( $_POST['sfc_recurrence'] ) ) ) : '',
+		'_sfc_recurrence_until' => isset( $_POST['sfc_recurrence_until'] ) ? sfc_sanitize_date( sanitize_text_field( wp_unslash( $_POST['sfc_recurrence_until'] ) ) ) : '',
 	);
 
-	foreach ( $fields as $meta_key => $field ) {
-		$sanitized = sfc_sanitize_event_meta_input( $field['request'], $field['sanitize'] );
-
-		if ( '' === $sanitized || null === $sanitized ) {
+	foreach ( $fields as $meta_key => $value ) {
+		if ( '' === $value || null === $value ) {
 			delete_post_meta( $post_id, $meta_key );
 			continue;
 		}
 
-		update_post_meta( $post_id, $meta_key, $sanitized );
+		update_post_meta( $post_id, $meta_key, $value );
 	}
 
 	$all_day = isset( $_POST['sfc_all_day'] ) ? '1' : '0';
@@ -354,41 +352,6 @@ function sfc_save_event_meta( $post_id ) {
 	update_post_meta( $post_id, '_sfc_recurrence_interval', max( 1, min( 99, $interval ) ) );
 }
 add_action( 'save_post_sfc_event', 'sfc_save_event_meta' );
-
-/**
- * Reads and sanitizes an event meta field from the current request.
- *
- * @param string $request_key Request field name.
- * @param string $sanitize    Sanitizer identifier.
- * @return string
- */
-function sfc_sanitize_event_meta_input( $request_key, $sanitize ) {
-	if ( ! isset( $_POST[ $request_key ] ) ) {
-		return '';
-	}
-
-	switch ( $sanitize ) {
-		case 'sfc_sanitize_date':
-			return sfc_sanitize_date( wp_unslash( $_POST[ $request_key ] ) );
-
-		case 'sfc_sanitize_time':
-			return sfc_sanitize_time( wp_unslash( $_POST[ $request_key ] ) );
-
-		case 'sanitize_text_field':
-			return sanitize_text_field( wp_unslash( $_POST[ $request_key ] ) );
-
-		case 'esc_url_raw':
-			return esc_url_raw( wp_unslash( $_POST[ $request_key ] ) );
-
-		case 'sanitize_hex_color':
-			return sanitize_hex_color( wp_unslash( $_POST[ $request_key ] ) );
-
-		case 'sfc_sanitize_recurrence':
-			return sfc_sanitize_recurrence( wp_unslash( $_POST[ $request_key ] ) );
-	}
-
-	return '';
-}
 
 /**
  * Sanitizes a date field.
