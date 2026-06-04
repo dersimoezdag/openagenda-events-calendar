@@ -21,14 +21,6 @@ define( 'SFC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SFC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /**
- * Loads plugin translations.
- */
-function sfc_load_textdomain() {
-	load_plugin_textdomain( 'simple-foss-calendar', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-}
-add_action( 'plugins_loaded', 'sfc_load_textdomain' );
-
-/**
  * Registers the Event post type and event topic taxonomy.
  */
 function sfc_register_content_types() {
@@ -345,8 +337,7 @@ function sfc_save_event_meta( $post_id ) {
 	);
 
 	foreach ( $fields as $meta_key => $field ) {
-		$value     = isset( $_POST[ $field['request'] ] ) ? wp_unslash( $_POST[ $field['request'] ] ) : '';
-		$sanitized = call_user_func( $field['sanitize'], $value );
+		$sanitized = sfc_sanitize_event_meta_input( $field['request'], $field['sanitize'] );
 
 		if ( '' === $sanitized || null === $sanitized ) {
 			delete_post_meta( $post_id, $meta_key );
@@ -363,6 +354,41 @@ function sfc_save_event_meta( $post_id ) {
 	update_post_meta( $post_id, '_sfc_recurrence_interval', max( 1, min( 99, $interval ) ) );
 }
 add_action( 'save_post_sfc_event', 'sfc_save_event_meta' );
+
+/**
+ * Reads and sanitizes an event meta field from the current request.
+ *
+ * @param string $request_key Request field name.
+ * @param string $sanitize    Sanitizer identifier.
+ * @return string
+ */
+function sfc_sanitize_event_meta_input( $request_key, $sanitize ) {
+	if ( ! isset( $_POST[ $request_key ] ) ) {
+		return '';
+	}
+
+	switch ( $sanitize ) {
+		case 'sfc_sanitize_date':
+			return sfc_sanitize_date( wp_unslash( $_POST[ $request_key ] ) );
+
+		case 'sfc_sanitize_time':
+			return sfc_sanitize_time( wp_unslash( $_POST[ $request_key ] ) );
+
+		case 'sanitize_text_field':
+			return sanitize_text_field( wp_unslash( $_POST[ $request_key ] ) );
+
+		case 'esc_url_raw':
+			return esc_url_raw( wp_unslash( $_POST[ $request_key ] ) );
+
+		case 'sanitize_hex_color':
+			return sanitize_hex_color( wp_unslash( $_POST[ $request_key ] ) );
+
+		case 'sfc_sanitize_recurrence':
+			return sfc_sanitize_recurrence( wp_unslash( $_POST[ $request_key ] ) );
+	}
+
+	return '';
+}
 
 /**
  * Sanitizes a date field.
@@ -563,6 +589,10 @@ add_action( 'pre_get_posts', 'sfc_admin_event_ordering' );
  * @return string
  */
 function sfc_get_admin_event_time_filter() {
+	if ( ! isset( $_GET['sfc_event_time_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['sfc_event_time_nonce'] ) ), 'sfc_filter_events' ) ) {
+		return 'active';
+	}
+
 	$filter = isset( $_GET['sfc_event_time'] ) ? sanitize_key( wp_unslash( $_GET['sfc_event_time'] ) ) : '';
 
 	return 'archive' === $filter ? 'archive' : 'active';
@@ -578,7 +608,7 @@ function sfc_admin_event_views( $views ) {
 	$current = sfc_get_admin_event_time_filter();
 
 	$active_url  = remove_query_arg( 'sfc_event_time', admin_url( 'edit.php?post_type=sfc_event' ) );
-	$archive_url = add_query_arg( 'sfc_event_time', 'archive', admin_url( 'edit.php?post_type=sfc_event' ) );
+	$archive_url = wp_nonce_url( add_query_arg( 'sfc_event_time', 'archive', admin_url( 'edit.php?post_type=sfc_event' ) ), 'sfc_filter_events', 'sfc_event_time_nonce' );
 
 	$views['all'] = sprintf(
 		'<a href="%1$s"%2$s>%3$s <span class="count">(%4$d)</span></a>',
