@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenAgenda Events Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.36
+ * Version: 0.1.39
  * Author: dersim
  * License: GPL-2.0-or-later
  * Text Domain: openagenda-events-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPENAGENDA_VERSION', '0.1.36' );
+define( 'OPENAGENDA_VERSION', '0.1.39' );
 define( 'OPENAGENDA_PLUGIN_FILE', __FILE__ );
 define( 'OPENAGENDA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPENAGENDA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -1752,13 +1752,7 @@ function openagenda_render_upcoming_events( $args = array() ) {
 	$show_time  = is_bool( $args['show_time'] ) ? $args['show_time'] : filter_var( $args['show_time'], FILTER_VALIDATE_BOOLEAN );
 	$style      = openagenda_normalize_upcoming_style( $args['style'] );
 
-	$events = openagenda_get_events(
-		array(
-			'from'  => current_time( 'Y-m-d' ),
-			'limit' => $max_events,
-			'topic' => $category,
-		)
-	);
+	$events = openagenda_get_upcoming_list_events( $max_events, $category );
 
 	$classes = array(
 		'openagenda-upcoming',
@@ -1821,6 +1815,23 @@ function openagenda_render_upcoming_events( $args = array() ) {
 	</div>
 	<?php
 	return ob_get_clean();
+}
+
+/**
+ * Fetches upcoming events for list displays.
+ *
+ * @param int    $max_events Maximum number of events.
+ * @param string $category   Optional event topic slug.
+ * @return array
+ */
+function openagenda_get_upcoming_list_events( $max_events, $category = '' ) {
+	return openagenda_get_events(
+		array(
+			'from'  => current_time( 'Y-m-d' ),
+			'limit' => $max_events,
+			'topic' => $category,
+		)
+	);
 }
 
 /**
