@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenAgenda Events Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.31
+ * Version: 0.1.33
  * Author: dersim
  * License: GPL-2.0-or-later
  * Text Domain: openagenda-events-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPENAGENDA_VERSION', '0.1.31' );
+define( 'OPENAGENDA_VERSION', '0.1.33' );
 define( 'OPENAGENDA_PLUGIN_FILE', __FILE__ );
 define( 'OPENAGENDA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPENAGENDA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -501,7 +501,7 @@ function openagenda_sortable_event_columns( $columns ) {
 add_filter( 'manage_edit-openagenda_event_sortable_columns', 'openagenda_sortable_event_columns' );
 
 /**
- * Applies active/archive filtering and event start date sorting in admin.
+ * Applies archive filtering and explicit event start date sorting in admin.
  *
  * @param WP_Query $query Query instance.
  */
@@ -516,22 +516,16 @@ function openagenda_admin_event_ordering( $query ) {
 		return;
 	}
 
-	$time_filter = openagenda_get_admin_event_time_filter();
-
-	if ( 'archive' === $time_filter ) {
+	if ( 'archive' === openagenda_get_admin_event_time_filter() ) {
 		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Event date filtering relies on registered post meta.
 		$query->set( 'meta_query', openagenda_get_admin_event_archive_meta_query() );
-	} else {
-		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Event date filtering relies on registered post meta.
-		$query->set( 'meta_query', openagenda_get_admin_event_active_meta_query() );
 	}
 
-	if ( 'openagenda_start' === $query->get( 'orderby' ) || ! $query->get( 'orderby' ) ) {
+	if ( 'openagenda_start' === $query->get( 'orderby' ) ) {
 		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Admin event sorting uses the registered start-date meta field.
 		$query->set( 'meta_key', '_openagenda_start_date' );
 		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Admin event sorting uses the registered start-date meta field.
 		$query->set( 'orderby', 'meta_value' );
-		$query->set( 'order', 'archive' === $time_filter ? 'DESC' : 'ASC' );
 	}
 }
 add_action( 'pre_get_posts', 'openagenda_admin_event_ordering' );
@@ -552,7 +546,7 @@ function openagenda_get_admin_event_time_filter() {
 }
 
 /**
- * Adds active/archive views to the admin event table.
+ * Adds an archive view to the admin event table.
  *
  * @param array $views Existing view links.
  * @return array
@@ -560,50 +554,18 @@ function openagenda_get_admin_event_time_filter() {
 function openagenda_admin_event_views( $views ) {
 	$current = openagenda_get_admin_event_time_filter();
 
-	$active_url  = remove_query_arg( 'openagenda_event_time', admin_url( 'edit.php?post_type=openagenda_event' ) );
 	$archive_url = wp_nonce_url( add_query_arg( 'openagenda_event_time', 'archive', admin_url( 'edit.php?post_type=openagenda_event' ) ), 'openagenda_filter_events', 'openagenda_event_time_nonce' );
 
-	$views['all'] = sprintf(
-		'<a href="%1$s"%2$s>%3$s <span class="count">(%4$d)</span></a>',
-		esc_url( $active_url ),
-		'active' === $current ? ' class="current" aria-current="page"' : '',
-		esc_html__( 'Active', 'openagenda-events-calendar' ),
-		absint( openagenda_count_admin_events_by_time_filter( 'active' ) )
-	);
-
 	$views['openagenda_event_archive'] = sprintf(
-		'<a href="%1$s"%2$s>%3$s <span class="count">(%4$d)</span></a>',
+		'<a href="%1$s"%2$s>%3$s</a>',
 		esc_url( $archive_url ),
 		'archive' === $current ? ' class="current" aria-current="page"' : '',
-		esc_html__( 'Archive', 'openagenda-events-calendar' ),
-		absint( openagenda_count_admin_events_by_time_filter( 'archive' ) )
+		esc_html__( 'Archive', 'openagenda-events-calendar' )
 	);
 
 	return $views;
 }
 add_filter( 'views_edit-openagenda_event', 'openagenda_admin_event_views' );
-
-/**
- * Counts events for an admin time filter.
- *
- * @param string $time_filter Time filter.
- * @return int
- */
-function openagenda_count_admin_events_by_time_filter( $time_filter ) {
-	$query = new WP_Query(
-		array(
-			'post_type'      => 'openagenda_event',
-			'post_status'    => array( 'publish', 'future', 'draft', 'pending', 'private' ),
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'no_found_rows'  => false,
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Admin event counts use the same date filters as the event list.
-			'meta_query'     => 'archive' === $time_filter ? openagenda_get_admin_event_archive_meta_query() : openagenda_get_admin_event_active_meta_query(),
-		)
-	);
-
-	return (int) $query->found_posts;
-}
 
 /**
  * Returns meta query for active events in the admin list.
@@ -1362,15 +1324,40 @@ function openagenda_enqueue_calendar_assets() {
  * @return string
  */
 function openagenda_calendar_shortcode( $atts ) {
+	$raw_atts = is_array( $atts ) ? $atts : array();
 	$atts = shortcode_atts(
 		array(
 			'topic'       => '',
 			'height'      => 'auto',
+			'category'    => '',
+			'limit'       => '',
+			'max-events'  => '',
+			'max_events'  => '',
+			'show-place'  => '',
+			'show_place'  => '',
+			'show-time'   => '',
+			'show_time'   => '',
 			'show_legend' => 'true',
+			'style'       => '',
 		),
 		$atts,
 		'openagenda_events_calendar'
 	);
+
+	$list_attribute_keys = array( 'category', 'limit', 'max-events', 'max_events', 'show-place', 'show_place', 'show-time', 'show_time', 'style' );
+	$has_list_attributes = array_intersect( $list_attribute_keys, array_keys( $raw_atts ) );
+
+	if ( ! empty( $has_list_attributes ) ) {
+		return openagenda_render_upcoming_events(
+			array(
+				'category'   => openagenda_first_filled_value( array( $atts['category'], $atts['topic'] ) ),
+				'max_events' => openagenda_first_filled_value( array( $atts['max-events'], $atts['max_events'], $atts['limit'] ), 6 ),
+				'show_place' => openagenda_first_filled_value( array( $atts['show-place'], $atts['show_place'] ), 'true' ),
+				'show_time'  => openagenda_first_filled_value( array( $atts['show-time'], $atts['show_time'] ), 'true' ),
+				'style'      => openagenda_first_filled_value( array( $atts['style'] ), 'list' ),
+			)
+		);
+	}
 
 	openagenda_enqueue_calendar_assets();
 
@@ -1747,7 +1734,7 @@ function openagenda_first_filled_value( $values, $fallback = '' ) {
  * @return string
  */
 function openagenda_normalize_upcoming_style( $style ) {
-	$style = sanitize_key( $style );
+	$style = str_replace( '_', '-', sanitize_key( (string) $style ) );
 
 	return in_array( $style, array( 'list', 'minimal-list', 'calendar' ), true ) ? $style : 'list';
 }

@@ -9,6 +9,28 @@
   const ServerSideRender = wp.serverSideRender;
 
   registerBlockType('openagenda-events-calendar/upcoming-events', {
+    attributes: {
+      category: {
+        type: 'string',
+        default: '',
+      },
+      maxEvents: {
+        type: 'number',
+        default: 6,
+      },
+      showPlace: {
+        type: 'boolean',
+        default: true,
+      },
+      showTime: {
+        type: 'boolean',
+        default: true,
+      },
+      displayStyle: {
+        type: 'string',
+        default: 'list',
+      },
+    },
     edit({ attributes, setAttributes }) {
       const blockProps = useBlockProps();
 

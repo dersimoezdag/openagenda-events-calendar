@@ -4,7 +4,7 @@ Tags: calendar, events, event calendar, shortcode
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.1.31
+Stable tag: 0.1.33
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,6 +81,16 @@ No. The plugin is an original implementation that takes broad product inspiratio
 No. Events are stored as WordPress content and rendered with local plugin assets.
 
 == Changelog ==
+
+= 0.1.33 =
+
+Rename the remaining source and language files to the OpenAgenda plugin slug.
+
+= 0.1.32 =
+
+Prevent admin Events list timeouts by removing expensive default meta filters and count queries.
+
+Honor list display attributes on the calendar shortcode for existing embeds that pass `style`, `max-events`, `show-place`, or `show-time`.
 
 = 0.1.31 =
 
