@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpenAgenda Events Calendar
  * Description: Adds an accessible events calendar and upcoming-events list to any WordPress site.
- * Version: 0.1.33
+ * Version: 0.1.34
  * Author: dersim
  * License: GPL-2.0-or-later
  * Text Domain: openagenda-events-calendar
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPENAGENDA_VERSION', '0.1.33' );
+define( 'OPENAGENDA_VERSION', '0.1.34' );
 define( 'OPENAGENDA_PLUGIN_FILE', __FILE__ );
 define( 'OPENAGENDA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPENAGENDA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -1909,35 +1909,65 @@ function openagenda_get_events( $args = array() ) {
 		)
 	);
 
+	$from  = openagenda_sanitize_date( $args['from'] );
+	$to    = openagenda_sanitize_date( $args['to'] );
+	$limit = max( 1, min( 200, absint( $args['limit'] ) ) );
+
+	if ( empty( $from ) ) {
+		$from = current_time( 'Y-m-d' );
+	}
+
+	$query_to = ! empty( $to ) ? $to : wp_date( 'Y-m-d', strtotime( $from . ' +2 years' ) );
+
 	$meta_query = array(
+		'relation' => 'AND',
 		array(
 			'key'     => '_openagenda_start_date',
 			'compare' => 'EXISTS',
 		),
-	);
-
-	if ( ! empty( $args['to'] ) ) {
-		$meta_query[] = array(
+		array(
 			'key'     => '_openagenda_start_date',
-			'value'   => $args['to'],
+			'value'   => $query_to,
 			'compare' => '<=',
 			'type'    => 'DATE',
-		);
-	}
+		),
+		array(
+			'relation' => 'OR',
+			array(
+				'key'     => '_openagenda_start_date',
+				'value'   => $from,
+				'compare' => '>=',
+				'type'    => 'DATE',
+			),
+			array(
+				'key'     => '_openagenda_end_date',
+				'value'   => $from,
+				'compare' => '>=',
+				'type'    => 'DATE',
+			),
+			array(
+				'key'     => '_openagenda_recurrence',
+				'value'   => array( 'daily', 'weekly', 'monthly', 'yearly' ),
+				'compare' => 'IN',
+			),
+		),
+	);
 
 	$query_args = array(
-		'post_type'      => 'openagenda_event',
-		'post_status'    => 'publish',
-		'posts_per_page' => -1,
+		'post_type'              => 'openagenda_event',
+		'post_status'            => 'publish',
+		'posts_per_page'         => openagenda_get_event_query_post_limit( $limit ),
+		'no_found_rows'          => true,
+		'update_post_term_cache' => false,
 		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Public event lists are ordered by the registered start-date meta field.
-		'meta_key'       => '_openagenda_start_date',
-		'orderby'        => array(
+		'meta_key'               => '_openagenda_start_date',
+		'orderby'                => array(
 			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Public event lists are ordered by the registered start-date meta field.
 			'meta_value' => 'ASC',
 			'date'       => 'ASC',
 		),
 		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Public event lists filter by the registered start-date meta field.
-		'meta_query'     => $meta_query,
+		'meta_query'             => $meta_query,
 	);
 
 	if ( ! empty( $args['topic'] ) ) {
@@ -1953,10 +1983,13 @@ function openagenda_get_events( $args = array() ) {
 
 	$query  = new WP_Query( $query_args );
 	$events = array();
-	$limit  = max( 1, min( 200, absint( $args['limit'] ) ) );
 
 	foreach ( $query->posts as $post ) {
-		$events = array_merge( $events, openagenda_expand_event_occurrences( $post, $args['from'], $args['to'] ) );
+		$events = array_merge( $events, openagenda_expand_event_occurrences( $post, $from, $to ) );
+
+		if ( count( $events ) >= $limit * 4 ) {
+			break;
+		}
 	}
 
 	wp_reset_postdata();
@@ -1969,6 +2002,24 @@ function openagenda_get_events( $args = array() ) {
 	);
 
 	return array_slice( $events, 0, $limit );
+}
+
+/**
+ * Returns a bounded post count for public event lookups.
+ *
+ * @param int $limit Requested event occurrence limit.
+ * @return int
+ */
+function openagenda_get_event_query_post_limit( $limit ) {
+	$post_limit = max( 50, min( 500, $limit * 4 ) );
+
+	/**
+	 * Filters the maximum number of event posts loaded for one public event query.
+	 *
+	 * @param int $post_limit Maximum event posts.
+	 * @param int $limit      Requested occurrence limit.
+	 */
+	return (int) apply_filters( 'openagenda_event_query_post_limit', $post_limit, $limit );
 }
 
 /**
