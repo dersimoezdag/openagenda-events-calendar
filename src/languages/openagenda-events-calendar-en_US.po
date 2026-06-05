@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenAgenda Events Calendar 0.1.34\n"
+"Project-Id-Version: OpenAgenda Events Calendar 0.1.36\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-03 17:10+0200\n"
 "PO-Revision-Date: 2026-06-03 17:10+0200\n"
@@ -281,6 +281,21 @@ msgstr "Active"
 
 msgid "Archive"
 msgstr "Archive"
+
+msgid "OpenAgenda Settings"
+msgstr "OpenAgenda Settings"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Uninstall behavior"
+msgstr "Uninstall behavior"
+
+msgid "Delete OpenAgenda events, event topics, and event metadata when uninstalling the plugin."
+msgstr "Delete OpenAgenda events, event topics, and event metadata when uninstalling the plugin."
+
+msgid "Leave this unchecked to keep event content after uninstalling. Page content that contains OpenAgenda shortcodes or blocks is not changed."
+msgstr "Leave this unchecked to keep event content after uninstalling. Page content that contains OpenAgenda shortcodes or blocks is not changed."
 
 #. translators: %s: event start time.
 msgid "%s o'clock"
