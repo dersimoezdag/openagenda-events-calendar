@@ -4,7 +4,7 @@ Tags: calendar, events, event calendar, shortcode
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 0.1.39
+Stable tag: 0.1.41
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -85,6 +85,14 @@ No. Events are stored as WordPress content and rendered with local plugin assets
 Go to Events > Settings and enable the uninstall cleanup option before uninstalling the plugin. When enabled, uninstall deletes OpenAgenda events, event topics, and event metadata. Page content that contains OpenAgenda shortcodes or blocks is not changed.
 
 == Changelog ==
+
+= 0.1.41 =
+
+Expand all candidate events before sorting upcoming occurrences so recurring events do not hide later one-time events.
+
+= 0.1.40 =
+
+Split the main plugin file into smaller include modules for easier maintenance.
 
 = 0.1.39 =
 

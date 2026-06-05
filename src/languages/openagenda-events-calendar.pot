@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenAgenda Events Calendar 0.1.39\n"
+"Project-Id-Version: OpenAgenda Events Calendar 0.1.41\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-03 17:10+0200\n"
 "MIME-Version: 1.0\n"
